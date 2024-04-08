@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InterviewerBot Chat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    /* Base styles */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 600px; /* Adjust height as needed */
+      width: 400px; /* Adjust width as needed */
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      background-color: #fff;
+      overflow: hidden;
+    }
+
+    /* Chat header */
+    .chat-header {
+      padding: 15px;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      background-color: #1abc9c;
+      color: #fff;
+    }
+
+    .chat-image {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover; /* Maintain aspect ratio */
+      margin-right: 10px;
+    }
+
+    .chat-title {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    /* Chat history */
+    #chat-history {
+      flex: 1;
+      padding: 10px;
+      overflow-y: scroll;
+    }
+
+    .message {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .user-message .message-content, .bot-message .message-content {
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 70%;
+    }
+
+    .user-message {
+      margin-left: auto;
+      background-color: #3498db;
+      color: #fff;
+    }
+
+    .bot-message {
+      background-color: #f1f1f1;
+    }
+
+    /* Input form */
+    #messageForm {
+      display: flex;
+      margin-top: 10px;
+    }
+
+    #userMessage {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+      font-size: 14px;
+    }
+
+    button[type="submit"], #speechButton {
+      background-color: #1abc9c;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button[type="submit"]:hover, #speechButton:hover {
+      background-color: #16a085;
+    }
+
+    /* Timestamp */
+    .timestamp {
+      font-size: 12px;
+      color: #999;
+      margin-left: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <img src="bot_icon.png" alt="Bot Icon" class="chat-image">
+      <h2 class="chat-title">InterviewerBot</h2>
+    </div>
+    <div id="chat-history">
+      {% for message in chat %}
+        <div class="message {{ message.sender }}">
+          <div class="message-content">
+            <p>{{ message.content }}</p>
+            <span class="timestamp">{{ message.timestamp }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <form id="messageForm" method="post">
+      <input type="text" id="userMessage" name="msg" placeholder="Type your message">
+      <button type="submit"><i class="fas fa-paper-plane"></i></button>
+    </form>
+    <button id="speechButton"><i class="fas fa-microphone"></i></button> <!-- New button for speech input -->
+    <p id="response">{{ response }}</p>
+  </div>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      // Speech recognition button click event
+      $("#speechButton").on("click", function () {
+        recognizeSpeech();
+      });
+  
+      // Submit form event handler
+      $("#messageForm").on("submit", function (event) {
+        event.preventDefault(); // Prevent form submission
+        var userMessage = $("#userMessage").val(); // Get user message from input field
+        sendMessage(userMessage); // Send user message
+      });
+  
+      // Function to recognize speech
+      function recognizeSpeech() {
+        var recognition = new webkitSpeechRecognition(); // Create speech recognition object
+        recognition.lang = 'en-US'; // Set language
+        recognition.start(); // Start recognition
+  
+        recognition.onresult = function (event) {
+          var userSpeech = event.results[0][0].transcript; // Get recognized speech
+          sendMessage(userSpeech); // Send user speech
+        };
+  
+        recognition.onerror = function (event) {
+          console.error("Speech recognition error:", event.error);
+        };
+      }
+  
+      // Function to send user message
+      function sendMessage(message) {
+        $.ajax({
+          type: "POST",
+          url: "/",
+          data: { msg: message }, // Send user message to Flask backend
+          success: function (response) {
+            // Handle response from Flask backend
+            console.log(response); // Log response to console (for debugging)
+            // Update chat history with user message
+            $("#chat-history").append(`<div class="message user-message">
+                                          <div class="message-content">
+                                            <p>${message}</p>
+                                            <span class="timestamp">${getCurrentTime()}</span>
+                                          </div>
+                                        </div>`);
+            // Clear input field after sending message
+            $("#userMessage").val("");
+            // Scroll to bottom of chat history
+            $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
+            // Display bot response
+            var botMessage = `<div class="message bot-message">
+                                <div class="message-content">
+                                  <p>${response}</p>
+                                  <span class="timestamp">${getCurrentTime()}</span>
+                                </div>
+                              </div>`;
+            $("#chat-history").append(botMessage);
+            // Detach the event handler after displaying the bot response
+            $(botMessage).one("animationend", function() {
+              $(this).remove();
+            });
+          },
+          error: function (xhr, status, error) {
+            // Handle errors
+            console.error(xhr.responseText);
+          }
+        });
+      }
+  
+      // Function to get current time in HH:MM format
+      function getCurrentTime() {
+        var now = new Date();
+        var hours = now.getHours().toString().padStart(2, '0');
+        var minutes = now.getMinutes().toString().padStart(2, '0');
+        return hours + ":" + minutes;
+      }
+    });
+  </script>
+  
+  
+</body>
+</html>
