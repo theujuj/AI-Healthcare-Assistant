@@ -3,115 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>InterviewerBot Chat</title>
+  <title>Chatbot</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     /* Base styles */
     body {
+      font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f2f2f2;
+      background-color: #e0f2ff; /* Light blue background */
     }
 
-    .chat-container {
-      display: flex;
-      flex-direction: column;
-      height: 600px; /* Adjust height as needed */
-      width: 400px; /* Adjust width as needed */
+    .chatbot {
+      max-width: 400px;
       margin: 20px auto;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
       overflow: hidden;
     }
 
-    /* Chat header */
-    .chat-header {
-      padding: 15px;
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-      background-color: #1abc9c;
+    .header {
+      background-color: #007bff; /* Dark blue header */
       color: #fff;
-    }
-
-    .chat-image {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover; /* Maintain aspect ratio */
-      margin-right: 10px;
-    }
-
-    .chat-title {
-      font-size: 1.2em;
-      font-weight: bold;
-    }
-
-    /* Chat history */
-    #chat-history {
-      flex: 1;
       padding: 10px;
+      text-align: center;
+    }
+
+    .messages {
+      padding: 10px;
+      max-height: 300px;
       overflow-y: scroll;
     }
 
-    .message {
-      margin-bottom: 10px;
+    .input {
       display: flex;
-      align-items: flex-start;
-    }
-
-    .user-message .message-content, .bot-message .message-content {
+      border-top: 1px solid #ddd;
       padding: 10px;
-      border-radius: 10px;
-      max-width: 70%;
     }
 
-    .user-message {
-      margin-left: auto;
-      background-color: #3498db;
+    input[type="text"] {
+      flex: 1;
+      padding: 5px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      background-color: #007bff;
       color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
     }
 
-    .bot-message {
-      background-color: #f1f1f1;
+    /* Additional styles for chat messages */
+    .user-message {
+      background-color: #d0e3f0; /* Lighter blue for user messages */
+      padding: 10px;
+      border-radius: 5px;
+      margin: 5px 0;
     }
 
-    /* Input form */
-    #messageForm {
-      display: flex;
+    .chatbot-message {
+      background-color: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 5px 0;
+      text-align: right;
+    }
+
+    /* Typing indicator */
+    #typing-indicator {
+      display: none;
+      text-align: center;
       margin-top: 10px;
     }
 
-    #userMessage {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      margin-right: 10px;
-      font-size: 14px;
+    #typing-indicator:before {
+      content: "Bot is typing...";
+      color: #007bff; /* Blue text for typing indicator */
+      animation: typing 1s steps(4, end) infinite;
     }
 
-    button[type="submit"], #speechButton {
-      background-color: #1abc9c;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    button[type="submit"]:hover, #speechButton:hover {
-      background-color: #16a085;
-    }
-
-    /* Timestamp */
-    .timestamp {
-      font-size: 12px;
-      color: #999;
-      margin-left: 5px;
+    @keyframes typing {
+      from {
+        width: 0;
+      }
+      to {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -122,21 +104,15 @@
       <h2 class="chat-title">InterviewerBot</h2>
     </div>
     <div id="chat-history">
-      {% for message in chat %}
-        <div class="message {{ message.sender }}">
-          <div class="message-content">
-            <p>{{ message.content }}</p>
-            <span class="timestamp">{{ message.timestamp }}</span>
-          </div>
-        </div>
-      {% endfor %}
+      <!-- Messages will be appended here -->
     </div>
     <form id="messageForm" method="post">
       <input type="text" id="userMessage" name="msg" placeholder="Type your message">
       <button type="submit"><i class="fas fa-paper-plane"></i></button>
     </form>
-    <button id="speechButton"><i class="fas fa-microphone"></i></button> <!-- New button for speech input -->
+    <button id="speechButton"><i class="fas fa-microphone"></i></button>
     <p id="response">{{ response }}</p>
+    <p id="typing-indicator"></p>
   </div>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script>
@@ -190,7 +166,7 @@
             // Scroll to bottom of chat history
             $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
             // Display bot response
-            var botMessage = `<div class="message bot-message">
+            var botMessage = `<div class="message chatbot-message">
                                 <div class="message-content">
                                   <p>${response}</p>
                                   <span class="timestamp">${getCurrentTime()}</span>
@@ -218,7 +194,5 @@
       }
     });
   </script>
-  
-  
 </body>
 </html>
